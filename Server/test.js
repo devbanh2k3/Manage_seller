@@ -1,31 +1,21 @@
-const data = {
-    "bearhubs1-https://xorinax.com/products/kitty-kurlzmagic-foldable-scratcher--cat-bed-1": {
-        "productLink": "https://xorinax.com/products/kitty-kurlzmagic-foldable-scratcher--cat-bed-1",
-        "store": "bearhubs1",
-        "rev": 34.98
-    },
-    "HieuHung-https://Ralivax.com/products/hot-sale-50-off-felt-learning-board-busy-board-2": {
-        "productLink": "https://Ralivax.com/products/hot-sale-50-off-felt-learning-board-busy-board-2",
-        "store": "HieuHung",
-        "rev": 124.94
-    },
-    "ASun-https://Viloraz.com/products/kitty-kurlzmagic-foldable-scratcher--cat-bed": {
-        "productLink": "https://Viloraz.com/products/kitty-kurlzmagic-foldable-scratcher--cat-bed",
-        "store": "ASun",
-        "rev": 189.90999999999997
-    },
-    "Hoamii-https://Raviron.com/products/kitchen-sink-faucet-organizer": {
-        "productLink": "https://Raviron.com/products/kitchen-sink-faucet-organizer",
-        "store": "Hoamii",
-        "rev": 98.94
-    }
-};
+const fileName = "DE_9.12.2024_PO_Bearbub";
 
-for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-        console.log(`Store: ${data[key].store}`);
-        console.log(`Product Link: ${data[key].productLink}`);
-        console.log(`Revenue: ${data[key].rev}`);
-        console.log('---------------------------');
-    }
+// Sử dụng biểu thức chính quy để trích xuất ngày, tháng, năm
+const dateRegex = /_(\d+)\.(\d+)\.(\d+)_/;
+const match = fileName.match(dateRegex);
+
+if (match) {
+    const day = match[1].padStart(2, '0'); // Đảm bảo định dạng ngày luôn có 2 chữ số
+    const month = match[2].padStart(2, '0'); // Đảm bảo định dạng tháng luôn có 2 chữ số
+    const year = match[3];
+
+    console.log(`Ngày: ${day}`);
+    console.log(`Tháng: ${month}`);
+    console.log(`Năm: ${year}`);
+
+    // Nếu cần, bạn có thể xuất ngày tháng năm dưới dạng chuỗi
+    const formattedDate = `${day}/${month}/${year}`;
+    console.log(`Ngày định dạng: ${formattedDate}`);
+} else {
+    console.log("Không tìm thấy ngày tháng trong tên file.");
 }

@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useForm } from 'react-hook-form';
-import { v4 as uuidv4 } from "uuid";
-import './style/product.css';
+import { v4 as uuidv4 } from 'uuid';
+import './productManager.css'; // Đổi tên file CSS
 
-const url = 'http://localhost:8000';
+const API_URL = 'http://localhost:8000/products';
 
 const ProductManager = () => {
     const { register, handleSubmit, reset } = useForm();
     const [products, setProducts] = useState([]);
-    const [editData, setEditData] = useState({});
+    const [editData, setEditData] = useState(null);
 
     const transformData = (data) => {
         const groupedProducts = data.reduce((acc, curr) => {
             const { id, name, cost, tier } = curr;
-            const existingProduct = acc.find((product) => product.id === id && product.name === name);
+            const existingProduct = acc.find((product) => product.id === id);
 
             if (existingProduct) {
                 existingProduct.costs[tier - 1] = cost;
@@ -22,21 +22,22 @@ const ProductManager = () => {
                 acc.push({
                     id,
                     name,
-                    costs: Array(3).fill(null),
+                    costs: [null, null, null],
                 });
                 acc[acc.length - 1].costs[tier - 1] = cost;
             }
             return acc;
         }, []);
+
         return groupedProducts;
     };
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get(url + '/api/products');
+            const response = await axios.get(API_URL);
             setProducts(transformData(response.data));
         } catch (error) {
-            console.error('Lỗi khi tải sản phẩm:', error);
+            console.error('Error fetching products:', error);
         }
     };
 
@@ -46,98 +47,87 @@ const ProductManager = () => {
 
     const onAddProduct = async (data) => {
         try {
-            const { silver, gold, platinum } = data;
-            const prices = [parseFloat(silver), parseFloat(gold), parseFloat(platinum)];
+            const { name, silver, gold, platinum } = data;
+            const prices = [silver, gold, platinum].map(parseFloat);
 
-            const newString = uuidv4();
-            await axios.post(url + '/add-product', {
-                id: newString,
-                name: data.name,
+            const newProductId = uuidv4();
+            await axios.post(API_URL + '/add', {
+                id: newProductId,
+                name,
                 prices,
-                tiers: [1, 2, 3]
+                tiers: [1, 2, 3],
             });
             reset();
             fetchProducts();
-            alert('Thêm sản phẩm thành công');
+            alert('Product added successfully!');
         } catch (error) {
-            console.error('Lỗi khi thêm sản phẩm:', error);
+            console.error('Error adding product:', error);
         }
     };
 
     const startEdit = (product) => {
-        setEditData({
-            id: product.id,
-            name: product.name,
-            costs: [...product.costs],
-        });
+        setEditData({ ...product });
     };
 
     const onUpdateProduct = async () => {
         try {
             const { id, name, costs } = editData;
-
             const tiers = [1, 2, 3];
 
-            const promises = costs.map((cost, index) => {
-                return axios.put(url + '/update-product', {
-                    id,
-                    name,
-                    cost,
-                    tier: tiers[index],
-                });
-            });
+            const updates = costs.map((cost, index) => (
+                axios.put(API_URL + '/update', { id, name, cost, tier: tiers[index] })
+            ));
 
-            await Promise.all(promises);
+            await Promise.all(updates);
             fetchProducts();
-            setEditData({});
-            alert('Sản phẩm được cập nhật thành công');
+            setEditData(null);
+            alert('Product updated successfully!');
         } catch (error) {
-            console.error('Lỗi khi cập nhật sản phẩm:', error);
+            console.error('Error updating product:', error);
         }
-    };
-
-    const cancelEdit = () => {
-        setEditData({});
     };
 
     const onDeleteProduct = async (id) => {
         try {
-            await axios.delete(url + '/delete-product', { data: { id } });
+            await axios.delete(API_URL + '/delete', { data: { id } });
             fetchProducts();
-            alert('Sản phẩm đã bị xóa');
+            alert('Product deleted successfully!');
         } catch (error) {
-            console.error('Lỗi khi xóa sản phẩm:', error);
+            console.error('Error deleting product:', error);
         }
     };
 
     return (
-        <div className="container">
-            <h1>Quản Lý Sản Phẩm</h1>
-            <form onSubmit={handleSubmit(onAddProduct)}>
-                <input {...register('name')} placeholder="Tên sản phẩm" required />
-                <input {...register('silver')} placeholder="Giá Silver" type="number" step="0.01" required />
-                <input {...register('gold')} placeholder="Giá Gold" type="number" step="0.01" required />
-                <input {...register('platinum')} placeholder="Giá Platinum" type="number" step="0.01" required />
-                <button type="submit">Thêm Sản Phẩm</button>
+        <div className="product-manager-container">
+            <h1>Product Management</h1>
+            <form onSubmit={handleSubmit(onAddProduct)} className="product-form">
+                <input {...register('name')} placeholder="Product Name" required />
+                <input {...register('silver')} placeholder="Silver Price" type="number" step="0.01" required />
+                <input {...register('gold')} placeholder="Gold Price" type="number" step="0.01" required />
+                <input {...register('platinum')} placeholder="Platinum Price" type="number" step="0.01" required />
+                <button type="submit">Add Product</button>
             </form>
 
-            <table border="1">
+            <table className="product-table">
                 <thead>
                     <tr>
+                        <th>STT</th> {/* Thêm cột STT */}
                         <th>ID</th>
-                        <th>Tên</th>
+                        <th>Name</th>
                         <th>Silver</th>
                         <th>Gold</th>
                         <th>Platinum</th>
-                        <th>Hành Động</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {products.map((product) => (
+                    {products.map((product, index) => (
                         <tr key={product.id}>
+                            {/* Tính toán số thứ tự */}
+                            <td>{index + 1}</td>
                             <td>{product.id}</td>
                             <td>
-                                {editData.id === product.id ? (
+                                {editData?.id === product.id ? (
                                     <input
                                         value={editData.name}
                                         onChange={(e) =>
@@ -148,61 +138,33 @@ const ProductManager = () => {
                                     product.name
                                 )}
                             </td>
+                            {product.costs.map((cost, index) => (
+                                <td key={index}>
+                                    {editData?.id === product.id ? (
+                                        <input
+                                            value={editData.costs[index]}
+                                            type="number"
+                                            onChange={(e) => {
+                                                const newCosts = [...editData.costs];
+                                                newCosts[index] = parseFloat(e.target.value);
+                                                setEditData({ ...editData, costs: newCosts });
+                                            }}
+                                        />
+                                    ) : (
+                                        cost
+                                    )}
+                                </td>
+                            ))}
                             <td>
-                                {editData.id === product.id ? (
-                                    <input
-                                        value={editData.costs[0]}
-                                        type="number"
-                                        onChange={(e) => {
-                                            const newCosts = [...editData.costs];
-                                            newCosts[0] = parseFloat(e.target.value);
-                                            setEditData({ ...editData, costs: newCosts });
-                                        }}
-                                    />
-                                ) : (
-                                    product.costs[0]
-                                )}
-                            </td>
-                            <td>
-                                {editData.id === product.id ? (
-                                    <input
-                                        value={editData.costs[1]}
-                                        type="number"
-                                        onChange={(e) => {
-                                            const newCosts = [...editData.costs];
-                                            newCosts[1] = parseFloat(e.target.value);
-                                            setEditData({ ...editData, costs: newCosts });
-                                        }}
-                                    />
-                                ) : (
-                                    product.costs[1]
-                                )}
-                            </td>
-                            <td>
-                                {editData.id === product.id ? (
-                                    <input
-                                        value={editData.costs[2]}
-                                        type="number"
-                                        onChange={(e) => {
-                                            const newCosts = [...editData.costs];
-                                            newCosts[2] = parseFloat(e.target.value);
-                                            setEditData({ ...editData, costs: newCosts });
-                                        }}
-                                    />
-                                ) : (
-                                    product.costs[2]
-                                )}
-                            </td>
-                            <td>
-                                {editData.id === product.id ? (
+                                {editData?.id === product.id ? (
                                     <>
-                                        <button onClick={onUpdateProduct}>Lưu</button>
-                                        <button onClick={cancelEdit}>Hủy</button>
+                                        <button onClick={onUpdateProduct}>Save</button>
+                                        <button onClick={() => setEditData(null)}>Cancel</button>
                                     </>
                                 ) : (
                                     <>
-                                        <button onClick={() => startEdit(product)}>Chỉnh Sửa</button>
-                                        <button onClick={() => onDeleteProduct(product.id)}>Xóa</button>
+                                        <button onClick={() => startEdit(product)}>Edit</button>
+                                        <button onClick={() => onDeleteProduct(product.id)}>Delete</button>
                                     </>
                                 )}
                             </td>
@@ -210,6 +172,7 @@ const ProductManager = () => {
                     ))}
                 </tbody>
             </table>
+
         </div>
     );
 };

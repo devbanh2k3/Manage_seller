@@ -60,24 +60,28 @@ const ViewProcess = () => {
 
     // Xuất dữ liệu JSON
     const handleExportJSON = async () => {
-        console.log(jsonData)
+        const missingLinks = [];  // Mảng lưu các link chưa được thêm vào
+
         for (const key in jsonData) {
             if (jsonData.hasOwnProperty(key)) {
                 const store = jsonData[key].store;
                 const link = jsonData[key].productLink;
 
-
                 try {
-                    const response = await axios.get('http://localhost:8000/links-sort', {
+                    const response = await axios.get('http://localhost:8000/links/sort', {
                         params: { link, store }
                     });
-                    console.log('test', response.data.data[0]);
+                    console.log('test', response.data);
                     console.log('---------------------------');
+                    if (response.data.message === 'No links found') {
+                        missingLinks.push(link);  // Thêm link vào mảng nếu chưa được thêm
+                        continue;  // Chuyển sang vòng lặp tiếp theo mà không thực hiện phần dưới
+                    }
 
                     const rev = Number(jsonData[key].rev); // Chuyển đổi rev sang số
-                    const cost = Number(response.data.data[0].cost); // Chuyển đổi cost sang số
+                    const cost = Number(response.data.data[0].productDetails.cost); // Chuyển đổi cost sang số
                     const idSeller = response.data.data[0].idseller;
-                    const product_name = response.data.data[0].product;
+                    const product_name = response.data.data[0].productDetails.name;
 
                     const profit = (rev / 100) * cost; // Tính lợi nhuận
                     const exchangeRate = 25400; // Tỷ giá
@@ -88,14 +92,9 @@ const ViewProcess = () => {
                     console.log("Profit:", profit);
                     console.log("Total Amount (VND):", total_amount);
 
-
-
                     const today = new Date();
 
-
-
-
-                    await axios.post('http://localhost:8000/add-profit', {
+                    await axios.post('http://localhost:8000/links/add-profit', {
                         transaction_date: today,
                         idSeller: idSeller,
                         store: store,
@@ -108,26 +107,22 @@ const ViewProcess = () => {
                         link: link
                     });
 
-
-
+                    alert("Nhập dữ liệu thành công");
 
                 } catch (error) {
                     console.error(`Error calling API for store: ${store}`, error);
                 }
-
             }
         }
 
-
-        // const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-        // const url = URL.createObjectURL(blob);
-
-        // const a = document.createElement('a');
-        // a.href = url;
-        // a.download = 'data.json';
-        // a.click();
-        // URL.revokeObjectURL(url);
+        // Nếu có link chưa được thêm, hiển thị chúng
+        if (missingLinks.length > 0) {
+            alert("Các link chưa được thêm: \n" + missingLinks.join('\n'));
+        } else {
+            alert("Tất cả các link đã được thêm.");
+        }
     };
+
 
     return (
         <div className="container">

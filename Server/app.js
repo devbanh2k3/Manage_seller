@@ -449,12 +449,6 @@ app.post('/add-profit', (req, res) => {
         });
     });
 
-
-
-
-
-
-
 });
 
 

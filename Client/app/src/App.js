@@ -1,31 +1,42 @@
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import ProductManager from './ProductManager'; // Đường dẫn tới file Home.jsx
-import CustomerManager from './CustomerManager'; // Đường dẫn tới file Home.jsx
+import ProductManager from './ProductManager';
+import CustomerManager from './CustomerManager';
 import Viewprocess from './viewprocess';
-// Các component cho từng trang
-const Home = () => <h1>Trang Chủ</h1>;
-const About = () => <h1>Giới Thiệu</h1>;
+import './App.css'; // File CSS để tùy chỉnh giao diện
 
+// Các component nhỏ cho từng trang
+const Home = () => <h1>Dashboard - Trang Chủ</h1>;
+const About = () => <h1>Dashboard - Giới Thiệu</h1>;
 
 const App = () => {
   return (
     <Router>
-      <nav>
-        <ul>
-          <li><Link to="/">Trang Chủ</Link></li>
-          <li><Link to="/CustomerManager">Thành viên</Link></li>
-          <li><Link to="/products">Quản Lý Sản Phẩm</Link></li>
-          <li><Link to="/Viewprocess">Xử lí dữ liệu</Link></li>
-        </ul>
-      </nav>
+      <div className="dashboard">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <h2>Dashboard</h2>
+          <nav>
+            <ul>
+              <li><Link to="/">Trang Chủ</Link></li>
+              <li><Link to="/CustomerManager">Quản Lý Thành Viên</Link></li>
+              <li><Link to="/products">Quản Lý Sản Phẩm</Link></li>
+              <li><Link to="/Viewprocess">Xử Lí Dữ Liệu</Link></li>
+            </ul>
+          </nav>
+        </aside>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/CustomerManager" element={<CustomerManager />} />
-        <Route path="/products" element={<ProductManager />} />
-        <Route path="/Viewprocess" element={<Viewprocess />} />
-      </Routes>
+        {/* Main Content */}
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/CustomerManager" element={<CustomerManager />} />
+            <Route path="/products" element={<ProductManager />} />
+            <Route path="/Viewprocess" element={<Viewprocess />} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 };
