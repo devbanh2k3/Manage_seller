@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import './productManager.css'; // Đổi tên file CSS
 
-const API_URL = 'http://localhost:8000/products';
+const API_URL = 'http://145.223.96.152/products';
 
 const ProductManager = () => {
     const { register, handleSubmit, reset } = useForm();

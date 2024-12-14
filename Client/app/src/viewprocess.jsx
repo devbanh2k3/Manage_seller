@@ -89,7 +89,7 @@ const ViewProcess = () => {
                 const link = jsonData[key].productLink;
 
                 try {
-                    const response = await axios.get('http://localhost:8000/links/sort', {
+                    const response = await axios.get('http://145.223.96.152/links/sort', {
                         params: { link, store },
                     });
 
@@ -103,8 +103,10 @@ const ViewProcess = () => {
                         const cost = Number(response.data.data[0].productDetails.cost);
                         const idSeller = response.data.data[0].idseller;
                         const product_name = response.data.data[0].productDetails.name;
+                        const const_temp = 100 - parseFloat(cost);
+                        const profit = (rev / 100) * const_temp;
 
-                        const profit = (rev / 100) * cost;
+
                         const exchangeRate = 25400;
                         const total_amount = Math.round(profit * exchangeRate * 100) / 100;
 
@@ -167,7 +169,7 @@ const ViewProcess = () => {
             for (let i = 0; i < modalData.length; i++) {
                 const row = modalData[i];
                 try {
-                    const response = await axios.post('http://localhost:8000/links/add-profit', row);
+                    const response = await axios.post('http://145.223.96.152/links/add-profit', row);
 
                     // Nếu thành công, cập nhật trạng thái
                     updatedModalData[i].status = 'Thành công';

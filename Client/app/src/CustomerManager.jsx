@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 
 import './CustomerManager.css';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://145.223.96.152';
 
 const CustomerManager = () => {
     const { register, handleSubmit, reset } = useForm();
