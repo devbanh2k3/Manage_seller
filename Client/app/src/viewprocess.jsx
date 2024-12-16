@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
-
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 const ViewProcess = () => {
     const [data, setData] = useState([]);
     const [jsonData, setJsonData] = useState({});
@@ -10,7 +11,79 @@ const ViewProcess = () => {
     const [fileDate, setFileDate] = useState(null); // Lưu giá trị ngày từ tên file
     const [missingLinks, setMissingLinks] = useState([]);
     const [isMissingLinksModalOpen, setIsMissingLinksModalOpen] = useState(false);
+    const [selectedStore, setSelectedStore] = useState('');
+    const [exchangeRate, setExchangeRate] = useState(25400); // Default value
 
+    const exportAllStoresToZip = async () => {
+        // Create a new JSZip instance
+        const zip = new JSZip();
+
+        // Get a list of unique stores
+        const uniqueStores = [...new Set(modalData.map((row) => row.store))];
+
+        if (uniqueStores.length === 0) {
+            alert('Không có dữ liệu để xuất file.');
+            return;
+        }
+
+        // Iterate over each store and generate Excel files
+        uniqueStores.forEach((store) => {
+            const filteredData = modalData.filter((row) => row.store === store);
+
+            if (filteredData.length > 0) {
+                // Get the current date for naming
+                const currentDate = new Date();
+                const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+
+                // Construct the file name
+                const fileName = `store_${store}_data_${formattedDate}.xlsx`;
+
+                // Convert data to worksheet
+                const worksheet = XLSX.utils.json_to_sheet(filteredData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Store Data');
+
+                // Generate the Excel file as a binary string
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+                // Add the file to the ZIP
+                zip.file(fileName, excelBuffer);
+            }
+        });
+
+        // Generate the ZIP file
+        zip.generateAsync({ type: 'blob' }).then((content) => {
+            // Trigger the download of the ZIP file
+            const currentDate = new Date();
+            const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            saveAs(content, `all_stores_data_${formattedDate}.zip`);
+        });
+
+        alert('Tất cả các file đã được nén và tải xuống!');
+    };
+
+
+    const exportStoreDataToExcel = (store) => {
+        if (!store) {
+            alert('Vui lòng chọn cửa hàng để xuất file.');
+            return;
+        }
+
+        const filteredData = modalData.filter((row) => row.store === store);
+
+        if (filteredData.length === 0) {
+            alert('Không có dữ liệu cho cửa hàng này.');
+            return;
+        }
+
+        // Convert data to worksheet
+        const worksheet = XLSX.utils.json_to_sheet(filteredData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Store Data');
+
+        // Generate Excel file and trigger download
+        XLSX.writeFile(workbook, `store_${store}_data.xlsx`);
+    };
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -107,7 +180,7 @@ const ViewProcess = () => {
                         const profit = (rev / 100) * const_temp;
 
 
-                        const exchangeRate = 25400;
+                        //const exchangeRate = 25400;
                         const total_amount = Math.round(profit * exchangeRate * 100) / 100;
 
                         const transaction_date = formatDateForMySQL(fileDate);
@@ -214,7 +287,14 @@ const ViewProcess = () => {
                     accept=".xlsx, .xls"
                     onChange={handleFileUpload}
                 />
+                <input
+                    id="exchange-rate"
+                    type="number"
+                    value={exchangeRate}
+                    onChange={(e) => setExchangeRate(Number(e.target.value))}
+                />
                 <button onClick={handleExportJSON} className="export-btn">Kiếm tra</button>
+
             </div>
 
             <div className="table-section">
@@ -310,18 +390,36 @@ const ViewProcess = () => {
                                         <td>{row.exchange_rate}</td>
                                         <td>{row.total_amount}</td>
                                         <td>{row.link}</td>
-                                        <td>{row.status || 'Chưa xử lý'}</td> {/* Hiển thị trạng thái */}
+                                        <td>{row.status || 'Chưa xử lý'}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                        <div>
+                            <label htmlFor="store-select">Chọn cửa hàng để xuất Excel:</label>
+                            <select
+                                id="store-select"
+                                value={selectedStore}
+                                onChange={(e) => setSelectedStore(e.target.value)}
+                            >
+                                <option value="">Chọn cửa hàng</option>
+                                {[...new Set(modalData.map((row) => row.store))].map((store) => (
+                                    <option key={store} value={store}>{store}</option>
+                                ))}
+                            </select>
+                            <button onClick={() => exportStoreDataToExcel(selectedStore)}>
+                                Xuất file Excel
+                            </button>
+                            <button onClick={exportAllStoresToZip}>
+                                Xuất tất cả các file Excel
+                            </button>
+
+                        </div>
                         <button onClick={handleConfirmSubmit}>Xác nhận</button>
                         <button onClick={() => setIsModalOpen(false)}>Hủy</button>
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 };
